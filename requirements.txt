@@ -1,0 +1,16 @@
+metaflow==2.8.0
+numpy
+pandas==1.5.1
+transformers==4.20.1
+datasets==2.9.0
+boto3==1.21.21
+botocore==1.24.21
+s3fs
+fsspec
+toolz==0.12.0
+spacy==3.4.0
+spacy-legacy==3.0.10
+spacy-loggers==1.0.3
+nesta_ds_utils @ git+https://github.com/nestauk/nesta_ds_utils.git
+pytest
+pyyaml
