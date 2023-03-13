@@ -11,7 +11,7 @@ This script preprocesses and split job advertisements into sentences using spaCy
 
 The path to the sample of processed job advertisements is (you must have access to Nesta's S3 bucket):
 
-'open-jobs-lake/escoe_extension/outputs/data/model_application_data/raw_job_adverts_sample.csv'
+`open-jobs-lake/escoe_extension/outputs/data/model_application_data/raw_job_adverts_sample.csv`
 
 The sample contains 100,000 job adverts from 2021-05-31 to 2021-06-15 and 1,027,797 unique job advert sentences.
 
@@ -33,9 +33,11 @@ To run the flow (with default model parameters, as defined in `config/training.y
 
 `python ojd_daps_language_models/pipeline/train_model/ojobert_flow.py run`
 
-The flow pushes the fine-tuned DistilBERT model to the huggingface hub and saves evaluation metrics to a datestamped `models/model_evaluation/distilbert-base-cased-finetuned-ojo-DATE_evaluation_results.json`
+The flow pushes the fine-tuned DistilBERT model to the huggingface hub and saves evaluation metrics to a datestamped `models/model_evaluation/distilbert-base-cased-finetuned-ojo-DATE_evaluation_results.json` in s3.
 
 You will need to have signed into huggingface by following the prompts after typing `huggingface-cli login` in your terminal to upload the model.
+
+## :sparkles: setting up with AWS and metaflow
 
 If you haven't used batch processing with Metaflow before and want to run any of the flows that make use of batch (e.g. `ojobert_flow.py`), you'll need to ensure a few things are set up first:
 
