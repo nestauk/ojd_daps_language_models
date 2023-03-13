@@ -35,6 +35,10 @@ To run the flow (with default model parameters, as defined in `config/training.y
 
 The flow pushes the fine-tuned DistilBERT model to the huggingface hub and saves evaluation metrics to a datestamped `models/model_evaluation/distilbert-base-cased-finetuned-ojo-DATE_evaluation_results.json` in s3.
 
+To test functions used in the flow:
+
+`pytest ojd_daps_language_models/pipeline/train_model/tests/test_ojobert_flow.py`
+
 You will need to have signed into huggingface by following the prompts after typing `huggingface-cli login` in your terminal to upload the model.
 
 ## :sparkles: setting up with AWS and metaflow
