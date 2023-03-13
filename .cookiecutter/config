@@ -1,0 +1,5 @@
+# Change these at your peril:
+export PROJECT_NAME=ojd_daps_language_models
+export REPO_NAME=ojd_daps_language_models
+export DESCRIPTION=Fine tune language models using job adverts
+export PROJECT_OPENNESS=public
