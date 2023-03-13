@@ -1,0 +1,4 @@
+pandas==1.5.1
+nesta_ds_utils @ git+https://github.com/nestauk/nesta_ds_utils.git
+datasets==2.9.0
+transformers==4.20.1
