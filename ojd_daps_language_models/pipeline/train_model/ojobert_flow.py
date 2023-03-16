@@ -5,7 +5,12 @@ for the purpose of next sentence prediction and masked language modelling.
 NOTE: make sure you're logged into huggingface with `huggingface-cli login`
 to upload the fine-tuned model to huggingface before running this flow.
 
-python ojd_daps_language_models/pipeline/train_model/ojobert_flow.py.py run
+if the flow is in production, unhash the batch decorator and run:
+
+    python ojd_daps_language_models/pipeline/train_model/ojobert_flow.py --datastore=s3 -- production=True run
+
+else:
+    python ojd_daps_language_models/pipeline/train_model/ojobert_flow.py run
 """
 from ojd_daps_language_models import logger, get_yaml_config, PROJECT_DIR, BUCKET_NAME
 import ojd_daps_language_models.utils.bert_training as bt
@@ -46,6 +51,8 @@ class OjoBertFlow(FlowSpec):
     mlm_probability = Parameter("mlm_probability", default=CONFIG["mlm_probability"])
     train_size = Parameter("train_size", default=CONFIG["bert_train_size"])
     batch_size = Parameter("batch_size", default=CONFIG["bert_batch_size"])
+    sents_per_file = Parameter("sents_per_file", default=CONFIG["sents_per_file"])
+    seed = Parameter("random_seed", default=42)
 
     @step
     def start(self):
@@ -62,10 +69,25 @@ class OjoBertFlow(FlowSpec):
         from itertools import chain
         import pandas as pd
         from datasets import Dataset
+        import random
+        import math
 
-        sent_files = get_s3_data_paths(
+        # we don't need all the sent files given we're not training the NN on all the data
+        # so we can downsample the data to save time
+        all_sent_files = get_s3_data_paths(
             s3, bucket_name=BUCKET_NAME, root=self.job_sent_path, file_types=["*.json"]
         )
+        sent_files_num = math.ceil(self.train_size / self.sents_per_file)
+
+        logger.info(
+            f"loading {sent_files_num} files based on {self.train_size} sentences"
+        )
+
+        random.seed(self.seed)
+        random.shuffle(all_sent_files)
+
+        # load data
+        sent_files = all_sent_files[:sent_files_num]
 
         sents = []
         for sent_file in sent_files:
@@ -119,7 +141,8 @@ class OjoBertFlow(FlowSpec):
 
         self.next(self.train_bert_model)
 
-    @batch(gpu=1)  # I think this is all you need to do
+    # hash the batch decorator if production = False !
+    # @batch(gpu=1)
     @step
     def train_bert_model(self):
         """Train a BERT-like model"""
