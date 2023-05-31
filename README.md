@@ -29,7 +29,7 @@ To run the flows, you will need to:
   - Setup the conda environment
   - Configure `pre-commit`
 - Download spacy model: `python -m spacy download en_core_web_sm`
-- install Pytorch: `conda install pytorch torchvision -c pytorch`
+- install Pytorch: `conda install pytorch torchvision -c pytorch` (if you are using mac OS x 13.4 operating system - `pip install torch`)
 - Set up batch processing with Metaflow
 - Sign into huggingface hub to push models to huggingface
 
