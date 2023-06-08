@@ -3,12 +3,14 @@ Flow to fine tune a BERT-like model on job advert sentences for domain adaptatio
 for the purpose of next sentence prediction and masked language modelling. We can use this model and fine
 tune i.e. NER heads to a domain adapted BERT model for NER.
 
-if the flow is in production, unhash the batch decorator and run:
+if you're running locally (will take a long time and you should hash the @batch decorator):
 
-    python ojd_daps_language_models/pipeline/train_model/ojobert_flow.py --datastore=s3 run
+python ojd_daps_language_models/pipeline/train_model/ojobert_flow.py run
 
-else:
-    python ojd_daps_language_models/pipeline/train_model/ojobert_flow.py run
+if you're running on AWS:
+
+python ojd_daps_language_models/pipeline/train_model/ojobert_flow.py --datastore=s3 run
+
 """
 from ojd_daps_language_models import logger, get_yaml_config, PROJECT_DIR, BUCKET_NAME
 import ojd_daps_language_models.utils.bert_training as bt
@@ -33,7 +35,9 @@ class OjoBertFlow(FlowSpec):
     3) Fine-tune DistilBERT on the train split and using test split for evaluation
     """
 
-    production = Parameter("production", help="to run in production mode", default=True)
+    production = Parameter(
+        "production", help="to run in production mode", default=False
+    )
     checkpoint = Parameter(
         "checkpoint",
         help="the name of the model checkout",
@@ -108,6 +112,7 @@ class OjoBertFlow(FlowSpec):
 
         self.next(self.prepare_training_data)
 
+    # make sure we have at least 100k job adverts in the training data
     @step
     def prepare_training_data(self):
         """Prepare training data for BERT-like model by:
@@ -144,8 +149,7 @@ class OjoBertFlow(FlowSpec):
 
         self.next(self.train_bert_model)
 
-    # hash the batch decorator if production = False!
-    @batch(gpu=1, memory=60000, cpu=8)
+    @batch(gpu=1, memory=60000, cpu=8, queue="job-queue-GPU-nesta-metaflow")
     @step
     def train_bert_model(self):
         """Train a BERT-like model"""
