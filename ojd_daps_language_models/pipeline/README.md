@@ -23,23 +23,9 @@ This will save out job advert sentences into chunk_size # of files.
 
 ## :office: `/train_model/`
 
-There are a number of flows in the `train_model` directory that fine-tune large language models for a number of different tasks.
+There are a number of flows in the `train_model` directory that fine-tune large language models for a number of different tasks:
 
-### :diamond_shape_with_a_dot_inside: Fine-tuning for domain language adaptation
-
-This script fine-tunes a DistilBERT model on job advertisements for domain adaptation for the purposes of next sentence prediction and masked language modelling.
-
-To run the flow (with default model parameters, as defined in `config/training.yaml`):
-
-`python ojd_daps_language_models/pipeline/train_model/ojobert_flow.py run`
-
-The flow pushes the fine-tuned DistilBERT model to the huggingface hub and saves evaluation metrics to a datestamped `models/model_evaluation/distilbert-base-cased-finetuned-ojo-DATE_evaluation_results.json` in s3.
-
-To test functions used in the flow:
-
-`pytest ojd_daps_language_models/pipeline/train_model/tests/test_ojobert_flow.py`
-
-You will need to have signed into huggingface by following the prompts after typing `huggingface-cli login` in your terminal to upload the model.
+1. 💠 Fine-tuning for domain language adaptation: `/ojobert/`
 
 ## :sparkles: setting up with AWS and metaflow
 
