@@ -1,3 +1,9 @@
+import sys
+
+sys.path.append(
+    "/Users/india.kerlenesta/Projects/dap_green_jobs/ojd_daps_language_models"
+)
+
 """
 If you would like to save a trained model from a flow to s3 based on evaluation results,
 run this script from the command line to save results locally and to s3, i.e.:
@@ -6,17 +12,12 @@ python ojd_daps_language_models/pipeline/train_model/save_trained_model.py --flo
 """
 
 from metaflow import (
-    namespace,
     Flow,
 )
 
 import os
 from ojd_daps_language_models import logger, PROJECT_DIR
 import boto3
-from math import exp
-from datetime import datetime
-import io
-import json
 
 import argparse
 
@@ -29,7 +30,6 @@ if __name__ == "__main__":
     flow = args.flow_name
 
     # save model and model evaluation locally and to s3 based on latest successful run
-    namespace(None)
     run = Flow(flow).latest_successful_run
     logger.info(f"Using run {str(run)} to save trained model to {run.data.output_dir}")
 
@@ -48,6 +48,6 @@ if __name__ == "__main__":
         s3.upload_file(
             os.path.join(local_model_path, file),
             "dap-ojobert",
-            f"models/{run.data.output_dir}/{file}",
+            f"models/{run.data.output_dir}{file}",
         )
     logger.info("...finished saving model to s3")

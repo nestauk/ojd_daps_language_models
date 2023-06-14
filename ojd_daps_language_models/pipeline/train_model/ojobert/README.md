@@ -1,16 +1,10 @@
-### :diamond_shape_with_a_dot_inside: Fine-tuning for domain language adaptation
+# :diamond_shape_with_a_dot_inside: Fine-tuning for domain language adaptation
 
 Scripts in this directory fine-tunes a DistilBERT model on job advertisements for domain adaptation for the purposes of next sentence prediction and masked language modelling.
 
-To run the flow (with default model parameters, as defined in `training.yaml`) locally and not in production, hash the batch decorator and run:
+To run the flow in production using AWS batch and the model configurations as described in `training.yaml`, run:
 
-`python ojd_daps_language_models/pipeline/train_model/ojobert/ojobert_flow.py run`
-
-In this instance, the DistilBERT model is fine-tuned on 500 sentences and model evaluation metrics are saved to s3.
-
-To run the flow in production and using AWS batch, run:
-
-`python ojd_daps_language_models/pipeline/train_model/ojobert/ojobert_flow.py --package-suffixes=.txt,.yaml --datastore=s3 run`
+`python ojd_daps_language_models/pipeline/train_model/ojobert/ojobert_flow.py --package-suffixes=.txt,.yaml --datastore=s3 --production=True run`
 
 The model will be fine-tuned on 100,000 sentences and model evaluation metrics are saved to s3.
 

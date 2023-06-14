@@ -13,6 +13,7 @@ with open(config_file_path, "rt") as f:
 
 # load tokenizer and model from config file
 tokenizer = AutoTokenizer.from_pretrained(CONFIG["checkpoint"])
+bert_model = AutoModelForMaskedLM.from_pretrained(CONFIG["checkpoint"])
 
 
 def tokenize_function(examples):

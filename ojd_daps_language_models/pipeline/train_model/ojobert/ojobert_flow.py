@@ -3,14 +3,6 @@ Flow to fine tune a BERT-like model on job advert sentences for domain adaptatio
 for the purpose of next sentence prediction and masked language modelling. We can use this model and fine
 tune i.e. NER heads to a domain adapted BERT model for NER.
 
-if you're running in production, you will also need to pass your huggingface token as a parameter.
-
-if you're running locally (will take a long time and you should hash the @batch decorator):
-
-python ojd_daps_language_models/pipeline/train_model/ojobert/ojobert_flow.py run
-
-if you're running on AWS:
-
 python ojd_daps_language_models/pipeline/train_model/ojobert/ojobert_flow.py --package-suffixes=.txt,.yaml --datastore=s3 run
 
 """
@@ -22,7 +14,13 @@ os.system(
 
 from metaflow import FlowSpec, step, Parameter, batch
 
-from ojobert_flow_utils import tokenizer, tokenize_function, group_texts, CONFIG
+from ojobert_flow_utils import (
+    tokenizer,
+    bert_model,
+    tokenize_function,
+    group_texts,
+    CONFIG,
+)
 
 import logging
 from datetime import datetime
@@ -36,7 +34,7 @@ import json
 import pandas as pd
 from datasets import Dataset
 import boto3
-from transformers import TrainingArguments, Trainer, AutoModelForMaskedLM
+from transformers import TrainingArguments, Trainer
 
 logger = logging.getLogger("dap-ojobert")
 
@@ -51,15 +49,15 @@ class OjoBertFlow(FlowSpec):
     3) Fine-tune DistilBERT on the train split and using test split for evaluation
     """
 
-    production = Parameter(
-        "production", help="to run in production mode", default=False
-    )
+    production = Parameter("production", help="to run in production mode", default=True)
 
     @step
     def start(self):
         """
         Starts the flow.
         """
+        self.tokenizer = tokenizer
+        self.bert_model = bert_model
         pass
         self.next(self.get_training_data)
 
@@ -122,8 +120,6 @@ class OjoBertFlow(FlowSpec):
         self.lm_datasets = self.tokenized_dataset.map(group_texts, batched=True)
         logger.info("grouped sentences into batches.")
 
-        self.tokenizer = tokenizer
-
         self.data_collator = DataCollatorForLanguageModeling(
             tokenizer=self.tokenizer, mlm_probability=CONFIG["mlm_probability"]
         )
@@ -150,7 +146,7 @@ class OjoBertFlow(FlowSpec):
 
         self.next(self.train_bert_model)
 
-    # @batch(gpu=1, memory=60000, cpu=8, queue="job-queue-GPU-nesta-metaflow")
+    @batch(gpu=1, memory=60000, cpu=10, queue="job-queue-GPU-nesta-metaflow")
     @step
     def train_bert_model(self):
         """Train a BERT-like model"""
@@ -172,8 +168,6 @@ class OjoBertFlow(FlowSpec):
             per_device_eval_batch_size=CONFIG["bert_batch_size"],
             logging_steps=logging_steps,
         )
-
-        self.bert_model = AutoModelForMaskedLM.from_pretrained(CONFIG["checkpoint"])
 
         trainer = Trainer(
             model=self.bert_model,
