@@ -1,9 +1,3 @@
-import sys
-
-sys.path.append(
-    "/Users/india.kerlenesta/Projects/dap_green_jobs/ojd_daps_language_models"
-)
-
 """
 If you would like to save a trained model from a flow to s3 based on evaluation results,
 run this script from the command line to save results locally and to s3, i.e.:
