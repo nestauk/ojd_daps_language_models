@@ -146,7 +146,7 @@ class OjoBertFlow(FlowSpec):
 
         self.next(self.train_bert_model)
 
-    @batch(gpu=1, memory=60000, cpu=10, queue="job-queue-GPU-nesta-metaflow")
+    @batch(gpu=1, memory=80000, cpu=8, queue="job-queue-GPU-nesta-metaflow")
     @step
     def train_bert_model(self):
         """Train a BERT-like model"""
