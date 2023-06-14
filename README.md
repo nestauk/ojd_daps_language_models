@@ -32,6 +32,7 @@ To run the flows, you will need to:
 - install Pytorch: `conda install pytorch torchvision -c pytorch` (if you are using mac OS x 13.4 operating system - `pip install torch`)
 - Set up batch processing with Metaflow
 - Sign into huggingface hub to push models to huggingface
+- run `export LC_ALL="en_GB.UTF-8"` in your terminal
 
 However, to simply use the models, please refer to [:cupid: Using fine-tuned model checkpoints](https://github.com/nestauk/dap_ojo_language_models#cupid-using-fine-tuned-model-checkpoints) section.
 

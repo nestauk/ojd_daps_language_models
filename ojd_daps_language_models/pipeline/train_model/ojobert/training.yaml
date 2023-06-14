@@ -1,10 +1,9 @@
-job_desc_path: "escoe_extension/outputs/data/model_application_data/"
 job_sent_path: "sentence_chunks/"
 chunk_size: 900
 checkpoint: "distilbert-base-uncased"
-sents_per_file: 10000
 bert_chunk_size: 128
 wwm_probability: 0.2
 mlm_probability: 0.15
 bert_train_size: 100000
 bert_batch_size: 64
+random_seed: 42

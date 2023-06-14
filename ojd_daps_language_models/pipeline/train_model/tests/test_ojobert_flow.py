@@ -6,7 +6,10 @@ import numpy as np
 from datasets import Dataset
 import pandas as pd
 
-from ojd_daps_language_models.utils.bert_training import tokenize_function, group_texts
+from ojd_daps_language_models.pipeline.train_model.ojobert.ojobert_flow_utils import (
+    tokenize_function,
+    group_texts,
+)
 
 job_sents = [
     "Nike is a shoe manufacturing company.",
