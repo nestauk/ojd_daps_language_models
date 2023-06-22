@@ -1,0 +1,16 @@
+metaflow==2.7.14
+numpy
+pandas==1.5.1
+transformers==4.24.0
+huggingface_hub==0.11
+datasets
+boto3
+botocore
+s3fs
+fsspec
+toolz==0.12.0
+spacy
+spacy-legacy
+spacy-loggers
+pytest
+pyyaml
