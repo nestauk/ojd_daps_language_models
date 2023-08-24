@@ -26,6 +26,7 @@ This will save out job advert sentences into chunk_size # of files.
 There are a number of flows in the `train_model` directory that fine-tune large language models for a number of different tasks:
 
 1. 💠 Fine-tuning for domain language adaptation: `/ojobert/`
+2. 📠 Fine-tuning Sequence Classification head to binarily label sentences as `company description` or not: `/company_descriptions/`
 
 ## :sparkles: setting up with AWS and metaflow
 
