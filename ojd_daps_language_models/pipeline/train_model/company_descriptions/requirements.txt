@@ -7,5 +7,5 @@ fsspec
 s3fs
 datasets
 pyyaml
-sklearn
+scikit-learn
 scipy
