@@ -45,16 +45,18 @@ where `LABEL_1` is the label for company description sentence.
 
 Fine-tuning metrics:
 
-| Metric | Value |
-| eval_loss | 0.462236 |
-| eval_runtime | 0.629300 |
+| Metric                  | Value      |
+| ----------------------- | ---------- |
+| eval_loss               | 0.462236   |
+| eval_runtime            | 0.629300   |
 | eval_samples_per_second | 233.582000 |
-| eval_steps_per_second | 15.890000 |
-| epoch | 10.000000 |
-| perplexity | 1.590000 |
+| eval_steps_per_second   | 15.890000  |
+| epoch                   | 10.000000  |
+| perplexity              | 1.590000   |
 
 Test set metrics:
 
-| label | precision | recall | f1-score | support |
-| not company description | 0.930693 0.959184 | 0.944724 | 98 |
-| company description | 0.913043 0.857143 | 0.884211 | 49 |
+| label                   | precision | recall   | f1-score | support |
+| ----------------------- | --------- | -------- | -------- | ------- |
+| not company description | 0.930693  | 0.959184 | 0.944724 | 98      |
+| company description     | 0.913043  | 0.857143 | 0.884211 | 49      |
