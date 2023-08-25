@@ -17,7 +17,7 @@ The sample contains 100,000 job adverts from 2021-05-31 to 2021-06-15 and 1,027,
 
 To run the flow:
 
-`python pipeline/make_training_data/split_job_ads.py run --chunk_size 1000`
+`python ojd_daps_language_models/pipeline/make_training_data/split_job_ads.py run --chunk_size 1000`
 
 This will save out job advert sentences into chunk_size # of files.
 

@@ -1,15 +1,10 @@
-import sys
-
-sys.path.append(
-    "/Users/india.kerlenesta/Projects/dap_green_jobs/ojd_daps_language_models/"
-)
 """
 Flow to fine tune a Sequence Classification head of jobbert to
 binarily classify sentences as a company description or not.
 
 python ojd_daps_language_models/pipeline/train_model/company_descriptions/compdescs_flow.py --package-suffixes=.txt,.yaml --datastore=s3 run
-
 """
+
 import os
 
 os.system(
@@ -131,7 +126,7 @@ class CompDescFlow(FlowSpec):
         from sklearn.metrics import classification_report
 
         training_args = TrainingArguments(
-            output_dir=CONFIG["output_dir"],
+            output_dir=CONFIG["model_name"],
             learning_rate=2e-5,
             per_device_train_batch_size=CONFIG["per_device_train_batch_size"],
             per_device_eval_batch_size=CONFIG["per_device_eval_batch_size"],
@@ -187,7 +182,7 @@ class CompDescFlow(FlowSpec):
         s3.upload_fileobj(
             obj,
             "prinz-green-jobs",
-            f"outputs/models/comp_desc_classifier/{CONFIG['model_name']}_{date}.json",
+            f"outputs/models/comp_desc_classifier/{CONFIG['model_name'].replace('-', '_')}_{date}.json",
         )
 
 
