@@ -27,7 +27,9 @@ class CompDescFlow(FlowSpec):
     The workflow performs the following steps:
     """
 
-    production = Parameter("production", help="to run in production mode", default=True)
+    production = Parameter(
+        "production", help="to run in production mode", default=False
+    )
     train_frac = Parameter(
         "train_frac", help="fraction of data to train on", default=0.9
     )
@@ -125,6 +127,8 @@ class CompDescFlow(FlowSpec):
         import numpy as np
         from sklearn.metrics import classification_report
 
+        print("defining training arguments...")
+        self.output_dir = CONFIG["model_name"]
         training_args = TrainingArguments(
             output_dir=CONFIG["model_name"],
             learning_rate=2e-5,
@@ -133,7 +137,7 @@ class CompDescFlow(FlowSpec):
             num_train_epochs=CONFIG["num_train_epochs"],
             weight_decay=CONFIG["weight_decay"],
         )
-
+        print("instantiating trainer...")
         trainer = Trainer(
             model=self.model,
             args=training_args,
@@ -142,7 +146,7 @@ class CompDescFlow(FlowSpec):
             tokenizer=self.tokenizer,
             data_collator=self.data_collator,
         )
-
+        print("training...")
         trainer.train()
 
         trainer_results = trainer.evaluate()
@@ -182,7 +186,7 @@ class CompDescFlow(FlowSpec):
         s3.upload_fileobj(
             obj,
             "prinz-green-jobs",
-            f"outputs/models/comp_desc_classifier/{CONFIG['model_name'].replace('-', '_')}_{date}.json",
+            f"outputs/models/comp_desc_classifier/{CONFIG['model_name'].replace('-', '_')}_{date}_{self.production}.json",
         )
 
 

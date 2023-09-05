@@ -12,10 +12,6 @@ If you're happy with the evaluation metrics, you can save the model locally by r
 
 `python ojd_daps_language_models/pipeline/train_model/save_trained_model.py --flow_name=CompDescFlow`
 
-If you would like to also push it to huggingface hub, you need to pass your huggingface API key:
-
-`python ojd_daps_language_models/pipeline/train_model/save_trained_model.py --flow_name=CompDescFlow --hf_token=<your huggingface API key>`
-
 ## 📠 Using the model
 
 To use the model, you can load it from huggingface hub:
