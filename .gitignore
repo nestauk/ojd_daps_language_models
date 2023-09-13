@@ -1,6 +1,9 @@
 .recipes/
 .cookiecutter/state/
 
+#ignore output models
+outputs/models/
+
 *.lock
 
 # Proposed convention

@@ -17,7 +17,9 @@ This repo contains the metaflows used to fine-tune transformer models with job a
 
 ## :cupid: Using fine-tuned model checkpoints
 
-The fine-tuned models (and their associated model cards) can be accessed via huggingface's hub.
+The fine-tuned models (and their associated model cards) can be accessed via huggingface's hub:
+
+- [📠 Company Description Classification](https://huggingface.co/ihk/jobbert-base-cased-compdecs)
 
 ## Setup
 
@@ -34,7 +36,7 @@ To run the flows, you will need to:
 - Sign into huggingface hub to push models to huggingface
 - run `export LC_ALL="en_GB.UTF-8"` in your terminal
 
-However, to simply use the models, please refer to [:cupid: Using fine-tuned model checkpoints](https://github.com/nestauk/dap_ojo_language_models#cupid-using-fine-tuned-model-checkpoints) section.
+However, to simply use the models, please refer to [:cupid: Using fine-tuned model checkpoints](https://github.com/nestauk/ojd_daps_language_models#cupid-using-fine-tuned-model-checkpoints) section.
 
 ## Contributor guidelines
 

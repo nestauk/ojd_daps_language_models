@@ -57,7 +57,7 @@ class OjoBertFlow(FlowSpec):
         Starts the flow.
         """
         self.tokenizer = tokenizer
-        self.bert_model = bert_model
+        self.model = bert_model
         pass
         self.next(self.get_training_data)
 
@@ -170,7 +170,7 @@ class OjoBertFlow(FlowSpec):
         )
 
         trainer = Trainer(
-            model=self.bert_model,
+            model=self.model,
             args=training_args,
             train_dataset=self.downsampled_dataset["train"],
             eval_dataset=self.downsampled_dataset["test"],
