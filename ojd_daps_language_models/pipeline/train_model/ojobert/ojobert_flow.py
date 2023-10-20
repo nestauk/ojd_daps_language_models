@@ -1,3 +1,8 @@
+import sys
+
+sys.path.append(
+    "/Users/india.kerlenesta/Projects/dap_green_jobs/ojd_daps_language_models"
+)
 """
 Flow to fine tune a BERT-like model on job advert sentences for domain adaptation
 for the purpose of next sentence prediction and masked language modelling. We can use this model and fine
@@ -36,8 +41,6 @@ from datasets import Dataset
 import boto3
 from transformers import TrainingArguments, Trainer
 
-logger = logging.getLogger("dap-ojobert")
-
 
 class OjoBertFlow(FlowSpec):
     """
@@ -49,7 +52,9 @@ class OjoBertFlow(FlowSpec):
     3) Fine-tune DistilBERT on the train split and using test split for evaluation
     """
 
-    production = Parameter("production", help="to run in production mode", default=True)
+    production = Parameter(
+        "production", help="to run in production mode", default=False
+    )
 
     @step
     def start(self):
@@ -78,7 +83,7 @@ class OjoBertFlow(FlowSpec):
         # load data
         sent_files = all_sent_files if self.production else all_sent_files[:1]
 
-        logger.info(f"loading {len(sent_files)} sentence files...")
+        print(f"loading {len(sent_files)} sentence files...")
 
         sents = []
         for sent_file in sent_files:
@@ -94,12 +99,12 @@ class OjoBertFlow(FlowSpec):
             else job_sents[:500]
         )
 
-        logger.info(f"loaded {len(job_sents)} sentences...")
+        print(f"loaded {len(job_sents)} sentences...")
 
         # convert into huggingface Dataset to use multi-threading
         self.job_sents_dataset = Dataset.from_pandas(pd.DataFrame({"text": job_sents}))
 
-        logger.info(f"Loaded {len(job_sents)} job sentences from S3.")
+        print(f"Loaded {len(job_sents)} job sentences from S3.")
 
         self.next(self.prepare_training_data)
 
@@ -115,15 +120,15 @@ class OjoBertFlow(FlowSpec):
         self.tokenized_dataset = self.job_sents_dataset.map(
             tokenize_function, batched=True, remove_columns=["text"]
         )
-        logger.info("Tokenized sentences.")
+        print("Tokenized sentences.")
 
         self.lm_datasets = self.tokenized_dataset.map(group_texts, batched=True)
-        logger.info("grouped sentences into batches.")
+        print("grouped sentences into batches.")
 
         self.data_collator = DataCollatorForLanguageModeling(
             tokenizer=self.tokenizer, mlm_probability=CONFIG["mlm_probability"]
         )
-        logger.info("prepared training data.")
+        print("prepared training data.")
 
         self.next(self.train_test_split)
 
@@ -142,7 +147,7 @@ class OjoBertFlow(FlowSpec):
             test_size=test_size,
             seed=CONFIG["random_seed"],
         )
-        logger.info("Split data into train and test sets.")
+        print("Split data into train and test sets.")
 
         self.next(self.train_bert_model)
 
@@ -177,11 +182,11 @@ class OjoBertFlow(FlowSpec):
             data_collator=self.data_collator,
             tokenizer=self.tokenizer,
         )
-        logger.info("Training BERT-like model...")
+        print("Training BERT-like model...")
 
         trainer.train()
 
-        logger.info("evaluate model...")
+        print("evaluate model...")
 
         self.eval_results = trainer.evaluate()
 
@@ -192,6 +197,7 @@ class OjoBertFlow(FlowSpec):
         """Save the model's evaluation results"""
         import io
 
+        print("saving model results...")
         self.eval_results["perplexity"] = round(exp(self.eval_results["eval_loss"]), 2)
         date = datetime.now().strftime("%Y-%m-%d")
 
