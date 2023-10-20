@@ -15,3 +15,29 @@ If you're happy with the evaluation metrics, you can save the model and tokenize
 To test functions used in the flow:
 
 `pytest ojd_daps_language_models/pipeline/train_model/tests/test_ojobert_flow.py`
+
+## 📠 Using the model
+
+To use the model, you can load it from huggingface hub:
+
+```
+from transformers import pipeline
+
+model = pipeline('fill-mask', model='ihk/ojobert', tokenizer='ihk/ojobert')
+
+text = "Would you like to join a major [MASK] company?"
+model(text, top_k=3)
+
+>> [{'score': 0.1886572688817978,
+  'token': 13859,
+  'token_str': 'pharmaceutical',
+  'sequence': 'would you like to join a major pharmaceutical company?'},
+ {'score': 0.07436735928058624,
+  'token': 5427,
+  'token_str': 'insurance',
+  'sequence': 'would you like to join a major insurance company?'},
+ {'score': 0.06400047987699509,
+  'token': 2810,
+  'token_str': 'construction',
+  'sequence': 'would you like to join a major construction company?'}]
+```

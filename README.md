@@ -19,7 +19,8 @@ This repo contains the metaflows used to fine-tune transformer models with job a
 
 The fine-tuned models (and their associated model cards) can be accessed via huggingface's hub:
 
-- [📠 Company Description Classification](https://huggingface.co/ihk/jobbert-base-cased-compdecs)
+- [📠 Company Description Classification](https://huggingface.co/nestauk/jobbert-base-cased-compdecs)
+- [:diamond_shape_with_a_dot_inside: OjoBert](https://huggingface.co/ihk/ojobert)
 
 ## Setup
 
