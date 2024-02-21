@@ -10,3 +10,4 @@ datasets
 pyyaml
 scikit-learn
 scipy
+wandb

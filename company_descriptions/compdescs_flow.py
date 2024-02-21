@@ -20,10 +20,16 @@ import pandas as pd
 
 import yaml
 
+import wandb
+from wandb.integration.metaflow import wandb_log
+
+wandb.login()
+
 # read config from training.yaml file
 CONFIG = yaml.safe_load(open("training.yaml"))
 
 
+@wandb_log(datasets=False, models=False)
 class CompDescFlow(FlowSpec):
     """
     Fine tune a Sequence Classification head to binarily classify
@@ -122,6 +128,16 @@ class CompDescFlow(FlowSpec):
         self.next(self.train_model)
 
     @batch(gpu=1, memory=60000, cpu=6, queue="job-queue-GPU-nesta-metaflow")
+    @wandb_log(
+        learning_rate=True,
+        weight_decay=True,
+        num_train_epochs=True,
+        per_device_train_batch_size=True,
+        per_device_eval_batch_size=True,
+        test_results=True,
+        training_results=True,
+        eval_results=True
+    )
     @step
     def train_model(self):
         """
