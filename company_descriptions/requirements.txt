@@ -1,0 +1,12 @@
+metaflow
+transformers[torch]
+boto3
+pandas
+toolz
+pyarrow
+fsspec
+s3fs
+datasets
+pyyaml
+scikit-learn
+scipy
