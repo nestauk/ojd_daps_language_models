@@ -12,6 +12,10 @@ If you're happy with the evaluation metrics, you can save the model locally by r
 
 `python train_model/save_trained_model.py --flow_name=CompDescFlow`
 
+To generate the training data, run:
+
+`python make_training_data/split_job_ads_flow.py --package-suffixes=.txt,.yaml --datastore=s3 --production=True run`
+
 ## 📠 Using the model
 
 To use the model, you can load it from huggingface hub:

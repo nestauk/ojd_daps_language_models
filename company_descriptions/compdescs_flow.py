@@ -29,7 +29,7 @@ wandb.login()
 CONFIG = yaml.safe_load(open("training.yaml"))
 
 
-@wandb_log(datasets=False, models=False)
+@wandb_log(datasets=False, models=False, others=False)
 class CompDescFlow(FlowSpec):
     """
     Fine tune a Sequence Classification head to binarily classify
@@ -128,16 +128,7 @@ class CompDescFlow(FlowSpec):
         self.next(self.train_model)
 
     @batch(gpu=1, memory=60000, cpu=6, queue="job-queue-GPU-nesta-metaflow")
-    @wandb_log(
-        learning_rate=True,
-        weight_decay=True,
-        num_train_epochs=True,
-        per_device_train_batch_size=True,
-        per_device_eval_batch_size=True,
-        test_results=True,
-        training_results=True,
-        eval_results=True
-    )
+    @wandb_log(datasets=False, models=False, others=True)
     @step
     def train_model(self):
         """
@@ -149,15 +140,18 @@ class CompDescFlow(FlowSpec):
         import numpy as np
         from sklearn.metrics import classification_report
 
+        self.learning_rate=2e-5
+        self.num_train_epochs=CONFIG["num_train_epochs"]
+        self.weight_decay=CONFIG["weight_decay"]
         print("defining training arguments...")
         self.output_dir = "jobbert-base-cased-compdecs"
         training_args = TrainingArguments(
             output_dir="jobbert-base-cased-compdecs",
-            learning_rate=2e-5,
+            learning_rate=self.learning_rate,
             per_device_train_batch_size=CONFIG["per_device_train_batch_size"],
             per_device_eval_batch_size=CONFIG["per_device_eval_batch_size"],
-            num_train_epochs=CONFIG["num_train_epochs"],
-            weight_decay=CONFIG["weight_decay"],
+            num_train_epochs=self.num_train_epochs,
+            weight_decay=self.weight_decay,
         )
         print("instantiating trainer...")
         trainer = Trainer(
@@ -171,11 +165,11 @@ class CompDescFlow(FlowSpec):
         print("training...")
         trainer.train()
 
-        trainer_results = trainer.evaluate()
-        trainer_results["perplexity"] = round(exp(trainer_results["eval_loss"]), 2)
+        self.trainer_results = trainer.evaluate()
+        self.trainer_results["perplexity"] = round(exp(self.trainer_results["eval_loss"]), 2)
 
         for config_name, config_value in CONFIG.items():
-            trainer_results[config_name] = config_value
+            self.trainer_results[config_name] = config_value
 
         # convert logits to probabilities
         probs = softmax(trainer.predict(self.tokenized_ds["test"]).predictions, axis=1)
@@ -184,11 +178,11 @@ class CompDescFlow(FlowSpec):
         # get true labels
         y_true = self.tokenized_ds["test"]["label"]
         # calculate classification report
-        test_results = classification_report(y_true, y_pred, output_dict=True)
+        self.test_results = classification_report(y_true, y_pred, output_dict=True)
 
         self.eval_results = {}
-        self.eval_results["training_evaluation"] = trainer_results
-        self.eval_results["test_set_evaluation"] = test_results
+        self.eval_results["training_evaluation"] = self.trainer_results
+        self.eval_results["test_set_evaluation"] = self.test_results
 
         self.next(self.end)
 
