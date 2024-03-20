@@ -12,9 +12,21 @@ If you're happy with the evaluation metrics, you can save the model locally by r
 
 `python train_model/save_trained_model.py --flow_name=CompDescFlow`
 
-To generate the training data, run:
+### Training Data
+
+The training data is produced from source online job adverts by:
+    - loading a source file of online job adverts
+    - removing numbers and stop words
+    - creating new sentences by identifying instances of Camel Case
+    - splitting sentences
+
+This results in a dataset of online job adverts with cleaned sentences.
+
+If internal to Nesta, generate the training data by running:
 
 `python make_training_data/split_job_ads_flow.py --package-suffixes=.txt,.yaml --datastore=s3 --production=True run`
+
+The `compdescs_flow.py` script will then use this data to train the model.
 
 ## 📠 Using the model
 
@@ -24,8 +36,8 @@ To use the model, you can load it from huggingface hub:
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from transformers import pipeline
 
-model = AutoModelForSequenceClassification.from_pretrained("ihk/jobbert-base-cased-compdecs")
-tokenizer = AutoTokenizer.from_pretrained("ihk/jobbert-base-cased-compdecs")
+model = AutoModelForSequenceClassification.from_pretrained("nestauk/jobbert-base-cased-compdecs")
+tokenizer = AutoTokenizer.from_pretrained("nestauk/jobbert-base-cased-compdecs")
 
 comp_desc = pipeline('text-classification', model=model, tokenizer=tokenizer)
 
@@ -36,6 +48,12 @@ comp_desc(job_sent)
 ```
 
 where `LABEL_1` is the label for company description sentence.
+
+Alternatively, we've refactored this into an easy to use python package, located [here](https://github.com/nestauk/ojd_daps_company_descriptions), which can be pip installed, using:
+
+```bash
+pip install git+https://github.com/nestauk/ojd_daps_company_descriptions.git
+```
 
 ## 📠 20230825 model metrics
 
