@@ -4,7 +4,7 @@ Scripts in this directory trains a Sequence Classification head of a [JobBERT mo
 
 `JobBERT` is a continuously pre-trained `bert-base-cased` checkpoint on ~3.2M sentences from job postings.
 
-To run the flow in production using AWS batch and the model configurations as described in `training.yaml`, run:
+To run the flow in production using AWS batch and the model configurations as described in `training.yaml`, run (using python 3.10 or later):
 
 `python compdescs_flow.py --package-suffixes=.txt,.yaml --datastore=s3 --production=True run`
 
