@@ -1,12 +1,19 @@
+"""
+Utils associated to training the multiskill classifier.
+
+It also contains utils associated to fixing entity spans and cleaning texts
+based on labelling data with label-studio then subsequently with Prodigy.
+"""
+
 import dataclasses
 import difflib
 import re
 from typing import Dict, List, Tuple, Union
-
+from pathlib import Path
 from toolz import pipe
 
 
-## define config
+### DEFINE VARIABLES USED IN MULTISKILL_FLOW ###
 @dataclasses.dataclass
 class TrainConfig:
     random_seed: int = 42
@@ -18,7 +25,7 @@ class TrainConfig:
 @dataclasses.dataclass
 class DataConfig:
     bucket_name: str = "open-jobs-lake"
-    data_path: str = (
+    data_path: Path = Path(
         "escoe_extension/outputs/labelled_job_adverts/combined_labels_20220824.json"
     )
     all_labels: List[str] = dataclasses.field(
@@ -26,7 +33,6 @@ class DataConfig:
     )
 
 
-# define our config
 @dataclasses.dataclass
 class Config:
     model_name: str = "nestauk/multiskill-classifier"
@@ -35,6 +41,8 @@ class Config:
 
 
 config: Config = Config()
+
+### DEFINE VARIABLES USED IN TEXT CLEANING ###
 
 compiled_missing_space_pattern = re.compile("([a-z])([A-Z])")
 compiled_nonalphabet_nonnumeric_pattern = re.compile(r"([^a-zA-Z0-9] )")
@@ -73,14 +81,23 @@ exception_camelcases = [
 trim_chars = [" ", ".", ",", ";", ":", "\xa0"]
 
 
-### FUNCTIONS ###
+### FUNCTIONS USED IN TEXT CLEANING ###
 
 
-def edit_ents(text, orig_ents):
-    """
-    A function to fix the text and entity spans,
-    will remove trailing whitespace/punctuation
-    from the text and spans
+def edit_ents(
+    text: str, orig_ents: List[Tuple[int, int, str]]
+) -> Tuple[List[Tuple[int, int, str]], bool]:
+    """Fix text and entity spans by
+        removing trailing whitespace and punctuation
+        from the text and spans.
+
+    Args:
+        text (str): The text to be cleaned.
+        orig_ents (List[Tuple[int, int, str]]): The entity spans.
+
+    Returns:
+        Tuple[List[Tuple[int, int, str]], bool]: The cleaned entity spans and a
+            boolean indicating if the text was edited.
     """
 
     editted = False
@@ -102,16 +119,27 @@ def edit_ents(text, orig_ents):
     return trimmed_ents, editted
 
 
-def fix_entity_annotations(text, ents):
-    """
-    Clean the text and entity spans for cases
-    where the entity ends but the next character is not a space
-    e.g. "this is OK you need to fixMe please and hereToo please"
-    ents = [(8, 10, "LABEL"), (15, 26, "LABEL"), (36,44,"LABEL")]
+def fix_entity_annotations(
+    text: str, ents: List[Tuple[int, int, str]]
+) -> Tuple[str, List[Tuple[int, int, str]]]:
+    """Clean text and entity spans for cases
+        where the entity ends but the next character
+        is not a spance.
 
-    Also:
-    - if start or end of entity is a space then trim it
+        e.g. "this is OK you need to fixMe please and hereToo please"
+        ents = [(8, 10, "LABEL"), (15, 26, "LABEL"), (36,44,"LABEL")]
+
+        If the start or the end of the entity is a space,
+            it is trimmed.
+
+    Args:
+        text (str): Text to be cleaned.
+        ents (List[Tuple[int, int, str]]): Entity spans.
+
+    Returns:
+        Tuple[str, List[Tuple[int, int, str]]]: The cleaned text and entity spans.
     """
+
     ent_additions = [0] * len(ents)
     insert_index_space = []
     for i, (b, e, l) in enumerate(ents):
@@ -151,26 +179,38 @@ def fix_entity_annotations(text, ents):
     return new_text, trimmed_ents
 
 
-def pad_punctuation(text):
-    """Pad punctuation marks with spaces (to facilitate lemmatisation)"""
-    text = compiled_nonalphabet_nonnumeric_pattern.sub(r" \1 ", text)
-    return text
+def _pad_punctuation(text: str) -> str:
+    """Pad punctuation marks with spaces,
+        to facilitate lemmatisation.
 
+    Args:
+        text (str): Text to be cleaned.
 
-def detect_camelcase(text):
+    Returns:
+        clean_text (str): Text with padded punctuation.
     """
-    Splits a word written in camel-case into separate sentences. This fixes a case
-    when the last word of a sentence in not seperated from the capitalised word of
-    the next sentence. This tends to occur with enumerations.
 
-    For example, the string "skillsBe" will be converted to "skills. Be"
+    clean_text = compiled_nonalphabet_nonnumeric_pattern.sub(r" \1 ", text)
 
-    Some camelcases are allowed though - these are found and replaced. e.g. JavaScript
+    return clean_text
 
-    Note that the present solution doesn't catch all such cases (e.g. "UKSkills")
 
-    Reference: https://stackoverflow.com/questions/1097901/regular-expression-split-string-by-capital-letter-but-ignore-tla
+def _detect_camelcase(text: str) -> str:
+    """Split camelcase words into separate sentences.
+
+        i.e. "skillsBe" --> "skills. Be"
+
+        Some camelcases are allowed though - these are found and replaced. e.g. JavaScript
+
+        Reference: https://stackoverflow.com/questions/1097901/regular-expression-split-string-by-capital-letter-but-ignore-tla
+
+    Args:
+        text (str): Text to be cleaned.
+
+    Returns:
+        str: Split text with spaces based on camelcase.
     """
+
     text = compiled_missing_space_pattern.sub(r"\1. \2", str(text))
     for exception in exception_camelcases:
         exception_cleaned = compiled_missing_space_pattern.sub(r"\1. \2", exception)
@@ -180,31 +220,45 @@ def detect_camelcase(text):
     return text
 
 
-def clean_text_pipeline(text):
-    """
-    Pipeline for preprocessing online job vacancy and skills-related text.
-    This should ONLY insert characters (eg spaces, fullstops) - not delete or replace any.
-    This is because when it comes to cross referencing the cleaned text with entity spans
-    our algorithm depends on only insertion.
+def clean_text(text: str) -> str:
+    """Pipeline for preprocessing online job vacancy
+        and skills-related text. It utilises the following functions:
+        - _detect_camelcase: Split camelcase words into separate sentences.
+        - _pad_punctuation: Pad punctuation marks with spaces.
 
     Args:
-            text (str): Text to be processed via the pipeline
+        text (str): Text to be cleaned.
+
+    Returns:
+        str: Cleaned text.
     """
+
     return pipe(
         text,
-        detect_camelcase,
-        pad_punctuation,  # messes up entity spans
+        _detect_camelcase,
+        _pad_punctuation,  # messes up entity spans
     )
 
 
-def get_old2new_chars_dict(orig_text, new_text):
+def get_old2new_chars_dict(orig_text: str, new_text: str) -> Dict[int, int]:
+    """Map the original text character indices to the new text indices.
+
+        i.e.
+
+        orig_text = "abcd"
+        new_text = "ab cd"
+
+        old2new_chars_dict = {0:0, 1:1, 2:3, 3:4}
+
+    Args:
+        orig_text (str): Original text.
+        new_text (str): New text.
+
+    Returns:
+        Dict[int, int]: Dictionary mapping original text
+            character indices to new text indices.
     """
-    This is a function to map the orig_text character indices to the new_text indices
-    e.g.
-    orig_text = "abcd"
-    new_text = "ab cd"
-    old2new_chars_dict = {0:0, 1:1, 2:3, 3:4}
-    """
+
     seq_matcher = difflib.SequenceMatcher(None, orig_text, new_text)
     old2new_chars_dict = {}
     for tag, i1, i2, j1, j2 in seq_matcher.get_opcodes():
@@ -226,8 +280,22 @@ def get_old2new_chars_dict(orig_text, new_text):
     return old2new_chars_dict
 
 
-def fix_all_formatting(text, ents):
-    new_text = clean_text_pipeline(text)
+def fix_all_formatting(
+    text: str, ents: List[Tuple[int, int, str]]
+) -> Tuple[str, List[Tuple[int, int, str]]]:
+    """Fix all formatting issues in the text and entity spans. This
+        includes:
+        - Cleaning the text (padding punctuation, splitting camelcase)
+        - Fixing entity annotations
+
+    Args:
+        text (str): Text to be cleaned.
+        ents (List[Tuple[int, int, str]]): Original entity spans.
+
+    Returns:
+        Tuple[str, List[Tuple[int, int, str]]]: Cleaned text and entity spans.
+    """
+    new_text = clean_text(text)
     old2new_chars_dict = get_old2new_chars_dict(text, new_text)
 
     new_ents = []
@@ -248,12 +316,29 @@ def fix_all_formatting(text, ents):
     return new_text, new_ents
 
 
-def clean_entities_text(text, ents):
+def clean_entities_text(
+    text: str, ents: List[Tuple[int, int, str]]
+) -> Tuple[str, List[Tuple[int, int, str]]]:
+    """Clean both text and entities for labelled data using
+        label-studio. This includes:
+        - Fixing all formatting issues
+        - Fixing entity annotations
+
+    Args:
+        text (str): Text to be cleaned.
+        ents (List[Tuple[int, int, str]]): Original entity spans.
+
+    Returns:
+        Tuple[str, List[Tuple[int, int, str]]]: Cleaned text and entity spans.
+    """
     text, ents = fix_all_formatting(text, ents)
     text, ents = fix_entity_annotations(
         text, ents
     )  # apply after to deal with the padding
     return text, ents
+
+
+### FUNCTIONS USED IN MULTISKILL_FLOW ###
 
 
 def _process_data(
@@ -276,8 +361,6 @@ def _process_data(
         ent_list : list
             The entity span list (modified after cleaning the text)
             this is in the form [(start_char, end_char, label),...]
-        all_labels : list
-            The list of all labels given to entities
     """
     text = job_advert_labels["text"]
     ent_tags = job_advert_labels["labels"]

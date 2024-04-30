@@ -7,7 +7,7 @@ The features used for training the classifier include:
 2. binary encoding if the token "and" is present in the 'SKILL' span and;
 3. binary encoding if the token "," is present in the 'SKILL' span.
 
-To run the flow in production locally, run:
+To run the flow in production, run:
 
 `python multiskill_flow.py --package-suffixes=.txt run --production=True`
 

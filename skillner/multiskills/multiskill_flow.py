@@ -4,11 +4,10 @@ Flow to train a classifier to predict if skill spans
 
 python multiskill_flow.py --package-suffixes=.txt run
 """
+from pathlib import Path
 import os
 
-os.system(
-    f"pip install -r {os.path.dirname(os.path.realpath(__file__))}/requirements.txt 1> /dev/null"
-)
+os.system(f"pip install -r {Path.cwd()}/requirements.txt 1> /dev/null")
 import boto3
 from dotenv import load_dotenv
 from metaflow import FlowSpec, Parameter, step
@@ -47,7 +46,7 @@ class MultiSkillFlow(FlowSpec):
         import json
 
         s3 = boto3.resource("s3")
-        obj = s3.Object(config.data.bucket_name, config.data.data_path)
+        obj = s3.Object(config.data.bucket_name, str(config.data.data_path))
         self.data = json.loads(obj.get()["Body"].read().decode("utf-8"))
 
         if not self.production:
