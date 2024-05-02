@@ -4,16 +4,16 @@ Flow to train a classifier to predict if skill spans
 
 python multiskill_flow.py --package-suffixes=.txt run
 """
-from pathlib import Path
 import os
+from pathlib import Path
 
-os.system(f"pip install -r {Path.cwd()}/requirements.txt 1> /dev/null")
+os.system(f"pip install -r {Path.cwd()}/multiskill_requirements.txt 1> /dev/null")
 import boto3
 from dotenv import load_dotenv
 from metaflow import FlowSpec, Parameter, step
 from wasabi import msg
 
-from multiskill_utils import config
+from utils import config
 
 load_dotenv()
 
@@ -62,7 +62,7 @@ class MultiSkillFlow(FlowSpec):
         """
         Process the labelled data.
         """
-        from multiskill_utils import _process_data
+        from skillner.utils import _process_data
 
         self.skills_list = []
         self.multiskills_list = []
@@ -85,7 +85,7 @@ class MultiSkillFlow(FlowSpec):
         """
         import random
 
-        from multiskill_utils import _transform_data
+        from skillner.utils import _transform_data
 
         random.seed(config.train.random_seed)
         random.shuffle(self.skills_list)
@@ -209,7 +209,7 @@ class MultiSkillFlow(FlowSpec):
             ), "Please set HF_TOKEN in your environment variables."
 
             hub_utils.push(
-                repo_id=config.model_name,
+                repo_id=f"{config.hf.namespace}/{config.hf.ms_model_name}",
                 source=local_repo,
                 token=token,
                 commit_message="pushing model files to huggingface",

@@ -1,5 +1,5 @@
 """
-Utils associated to training the multiskill classifier.
+Utils associated to the multiskill and skill classification flows.
 
 It also contains utils associated to fixing entity spans and cleaning texts
 based on labelling data with label-studio then subsequently with Prodigy.
@@ -7,19 +7,33 @@ based on labelling data with label-studio then subsequently with Prodigy.
 
 import dataclasses
 import difflib
+import random
 import re
-from typing import Dict, List, Tuple, Union
 from pathlib import Path
+from typing import Dict, List, Tuple, Union
+
+from nervaluate import Evaluator
+from spacy import Language
+from spacy.training import Example
+from spacy.util import compounding, fix_random_seed, minibatch
 from toolz import pipe
+from tqdm import tqdm
+from wasabi import msg
 
 
-### DEFINE VARIABLES USED IN MULTISKILL_FLOW ###
+### DEFINE VARIABLES USED ACROSS THE FLOWS ###
 @dataclasses.dataclass
 class TrainConfig:
     random_seed: int = 42
     test_size: float = 0.25
     kernel: str = "linear"
     class_weight: str = "balanced"
+    train_prop: float = 0.8
+    drop_out: float = 0.3
+    num_its: int = 50
+    learn_rate: float = 0.001
+    print_losses: bool = True
+    spacy_model: str = "en_core_web_lg"
 
 
 @dataclasses.dataclass
@@ -34,9 +48,16 @@ class DataConfig:
 
 
 @dataclasses.dataclass
+class HfConfig:
+    namespace: str = "nestauk"
+    ms_model_name: str = "multiskill-classifier"
+    sn_model_name: str = "skillner"
+
+
+@dataclasses.dataclass
 class Config:
-    model_name: str = "nestauk/multiskill-classifier"
     train: TrainConfig = TrainConfig()
+    hf: HfConfig = HfConfig()
     data: DataConfig = DataConfig()
 
 
@@ -79,7 +100,6 @@ exception_camelcases = [
     "AutoCAD",
 ]
 trim_chars = [" ", ".", ",", ";", ":", "\xa0"]
-
 
 ### FUNCTIONS USED IN TEXT CLEANING ###
 
@@ -401,3 +421,77 @@ def _transform_data(entity_list: Union[List[str], str]) -> List[int]:
         entity_vec.append([len(entity), int(" and " in entity), int("," in entity)])
 
     return entity_vec
+
+
+### FUNCTIONS FOR TRAINING NER MODEL ###
+
+
+def train_ner(
+    nlp: Language,
+    train_data: list,
+    print_losses: bool = config.train.print_losses,
+    drop_out: float = config.train.drop_out,
+    num_its: int = config.train.num_its,
+    learn_rate: float = config.train.learn_rate,
+):
+    fix_random_seed(config.train.random_seed)
+    pipe_exceptions = ["ner"]
+    other_pipes = [pipe for pipe in nlp.pipe_names if pipe not in pipe_exceptions]
+
+    optimizer = nlp.create_optimizer()
+    optimizer.learn_rate = learn_rate
+
+    all_losses = []
+    with nlp.disable_pipes(*other_pipes):
+        sizes = compounding(1.0, 4.0, 1.001)
+        for itn in tqdm(range(num_its)):
+            random.seed(itn)
+            random.shuffle(train_data)
+            batches = minibatch(train_data, size=sizes)
+            losses = {}
+            for batch in batches:
+                for text, annotation in batch:
+                    doc = nlp.make_doc(text)
+                    example = Example.from_dict(doc, annotation)
+                    nlp.update([example], sgd=optimizer, losses=losses, drop=drop_out)
+            all_losses.append(losses["ner"])
+            if print_losses:
+                msg.info(f"Iteration: {itn}; Loss: {losses['ner']}")
+
+
+def evaluate_ner(
+    y_true: List[List[str]],
+    y_pred: List[List[str]],
+    all_labels: List[str] = config.data.all_labels,
+) -> dict:
+    """Evaluate the NER model using nervaluate.
+
+    Args:
+        y_true (List[List[str]]): True start and end indices of entities.
+        y_pred (List[List[str]]): Predicted start and end indices of entities.
+        all_labels (List[str], optional): List of predicted labels. Defaults to config.data.all_labels.
+
+    Returns:
+        dict: Evaluation results.
+    """
+    evaluator = Evaluator(y_true, y_pred, tags=all_labels, loader="list")
+    results_all, results_per_tag = evaluator.evaluate()
+
+    results_summary = {}
+
+    all_dict = {}
+    for ev_type in ["f1", "precision", "recall"]:
+        all_dict[ev_type] = results_all["partial"][ev_type]
+    results_summary["All"] = all_dict
+
+    for label, lab_res in results_per_tag.items():
+        lab_dict = {}
+        for ev_type in ["f1", "precision", "recall"]:
+            lab_dict[ev_type] = lab_res["partial"][ev_type]
+        results_summary[label] = lab_dict
+
+    return {
+        "results_summary": results_summary,
+        "results_all": results_all,
+        "results_per_tag": results_per_tag,
+    }
