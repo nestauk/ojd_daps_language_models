@@ -77,7 +77,7 @@ Then, you can use the `--push-to-hub=True` flag.
 To use the NER model, you can load it from huggingface hub:
 
 ```
-!pip install https://huggingface.co/nestauk/en_core_web_lg/resolve/main/en_core_web_lg-any-py3-none-any.whl
+!pip install https://huggingface.co/nestauk/en_skillner/resolve/main/en_skillner-any-py3-none-any.whl
 
 # Using spacy.load().
 import spacy
