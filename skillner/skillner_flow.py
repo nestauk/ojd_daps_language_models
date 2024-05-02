@@ -167,12 +167,12 @@ class SkillNerFlow(FlowSpec):
 
             self.nlp.to_disk(Path.cwd() / config.hf.sn_model_name)
             os.system(
-                f"python -m spacy package {Path.cwd() / config.hf.sn_model_name} {Path.cwd() / 'output'} --build wheel"
+                f"python -m spacy package {Path.cwd() / config.hf.sn_model_name} {Path.cwd() / 'output'} --name {config.hf.sn_model_name} --build wheel"
             )
 
             # get filename of the wheel file
             model_path = (
-                f'output/{config.train.spacy_model}-{self.nlp.meta["version"]}/dist'
+                f'output/en_{config.train.spacy_model}-{self.nlp.meta["version"]}/dist'
             )
             wheel_file = list((Path.cwd() / model_path).glob("*.whl"))[0]
 

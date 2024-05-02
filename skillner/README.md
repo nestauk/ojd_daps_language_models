@@ -3,7 +3,7 @@
 This directory contains the scripts needed to train models associated to extracting 'SKILL' spans from text. There are **two** models that are trained:
 
 1. **Multi-Skill Classification**: This model predicts whether an extracted 'SKILL' span contains multiple skills or not. 
-2. **SkillNER**: This model predicts the start and end spans of 'SKILL' entities in text. 
+2. **SkillNER**: This model predicts the start and end spans of 'SKILL', 'EXPERIENCE', and 'BENEFIT' entities in text. 
 
 ## 🤔 Multi-Skill Classification
 
@@ -16,12 +16,14 @@ The features used for training the classifier include:
 
 To run the flow in production, run:
 
-`python multiskill_flow.py --package-suffixes=.txt run --production=True`
+```
+python multiskill_flow.py --package-suffixes=.txt run --production=True
+```
 
 You will need access to Nesta's s3 bucket to train the model. If you would like to push the model to huggingface hub, you will need to have a huggingface account and fine-grained access API token to the `nestauk` organisation. Once you have the token, you can set it as an environment variable:
 
 ```
-export HF_TOKEN=<your_token> > .env
+export HF_TOKEN="<your_token>" > .env
 ```
 
 Then, you can use the `--push-to-hub=True` flag.
@@ -50,14 +52,22 @@ The model metrics are also reported from huggingface hub.
 
 Scripts beginning with `skillner_` in this directory train a Named Entity Recognition (NER) model to predict the start and end spans of 'SKILL', 'EXPERIENCE', and 'BENEFIT' entities in text.
 
-To run the flow in production, run:
+You will first need to download the base model that we will train. This is defined in the `utils.py` file. The base model is currently `en_core_web_lg` from spacy. You can download it by running:
 
-`python skillner_flow.py --package-suffixes=.txt run --production=True`
+```
+python -m spacy download en_core_web_lg
+```
+
+Then, to run the flow in production, run:
+
+```
+python skillner_flow.py --package-suffixes=.txt run --production=True
+```
 
 You will need access to Nesta's s3 bucket to train the model. If you would like to push the model to huggingface hub, you will need to have a huggingface account and fine-grained access API token to the `nestauk` organisation. Once you have the token, you can set it as an environment variable:
 
 ```
-export HF_TOKEN=<your_token> > .env
+export HF_TOKEN="<your_token>" > .env
 ```
 
 Then, you can use the `--push-to-hub=True` flag.
@@ -71,8 +81,7 @@ To use the NER model, you can load it from huggingface hub:
 
 # Using spacy.load().
 import spacy
-nlp = spacy.load("en_core_web_lg")
-
+nlp = spacy.load("en_skillner")
 ```
 
 The model metrics are also reported from huggingface hub. 
