@@ -182,7 +182,7 @@ class SkillNerFlow(FlowSpec):
                 "version": self.nlp.meta["version"],
                 "description": "A Named Entity Recognition (NER) model to extract SKILL, EXPERIENCE and BENEFIT from job adverts.",
                 "labels": {
-                    "ner": [l for l in config.data.all_labels if l != "MULTISKILL"]
+                    "ner": self.all_labels,
                 },
                 "pipeline": self.nlp.meta["pipeline"],
                 "components": self.nlp.meta["components"],
