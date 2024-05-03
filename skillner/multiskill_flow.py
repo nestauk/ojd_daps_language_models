@@ -13,9 +13,45 @@ from dotenv import load_dotenv
 from metaflow import FlowSpec, Parameter, step
 from wasabi import msg
 
+from typing import List
+from sklearn.base import BaseEstimator, TransformerMixin
+
 from utils import config
 
 load_dotenv()
+
+
+### Define Multiskill Transformer
+class MultiSkillTransformer(BaseEstimator, TransformerMixin):
+    def fit(self, X, y=None):
+        # No fitting necessary, just return self
+        return self
+
+    def transform(self, X):
+        """Apply the transform_skill function to each element in X.
+
+        Args:
+            X (iterable of str): The data to transform.
+
+        Returns:
+            List[List[int]]: Transformed data, where each item is the output of transform_skill.
+        """
+        return [self.transform_skill(skill) for skill in X]
+
+    @staticmethod
+    def transform_skill(skill: str) -> List[int]:
+        """Transform skill into a list of features. The features are:
+            - length of skill span;
+            - presence of " and " in skill span;
+            - presence of "," in skill span.
+
+        Args:
+            skill (str): skill span.
+
+        Returns:
+            List[int]: list of integers.
+        """
+        return [len(skill), int(" and " in skill), int("," in skill)]
 
 
 class MultiSkillFlow(FlowSpec):
@@ -62,7 +98,7 @@ class MultiSkillFlow(FlowSpec):
         """
         Process the labelled data.
         """
-        from skillner.utils import _process_data
+        from utils import _process_data
 
         self.skills_list = []
         self.multiskills_list = []
@@ -74,31 +110,6 @@ class MultiSkillFlow(FlowSpec):
                 elif label == "MULTISKILL":
                     self.multiskills_list.append(text[start:end])
 
-        self.next(self.transform_data)
-
-    @step
-    def transform_data(self):
-        """
-        Transform the raw text into
-            vectors of numerical features
-            to train an SVM model downstream.
-        """
-        import random
-
-        from skillner.utils import _transform_data
-
-        random.seed(config.train.random_seed)
-        random.shuffle(self.skills_list)
-
-        # balance dataset
-        self.clean_data = (
-            self.multiskills_list + self.skills_list[: len(self.multiskills_list)]
-        )
-        self.X = _transform_data(self.clean_data)
-        self.y = [1] * len(self.multiskills_list) + [0] * len(
-            self.skills_list[: len(self.multiskills_list)]
-        )
-
         self.next(self.split_data)
 
     @step
@@ -107,6 +118,16 @@ class MultiSkillFlow(FlowSpec):
         Split the data into training and test sets.
         """
         from sklearn.model_selection import train_test_split
+        import random
+
+        random.seed(config.train.random_seed)
+        random.shuffle(self.skills_list)
+
+        # balance dataset
+        self.X = self.multiskills_list + self.skills_list[: len(self.multiskills_list)]
+        self.y = [1] * len(self.multiskills_list) + [0] * len(
+            self.skills_list[: len(self.multiskills_list)]
+        )
 
         self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
             self.X,
@@ -125,9 +146,20 @@ class MultiSkillFlow(FlowSpec):
         Train the SVM model.
         """
         from sklearn.svm import SVC
+        from sklearn.pipeline import Pipeline
 
-        self.pipeline = SVC(
-            kernel=config.train.kernel, C=1, class_weight=config.train.class_weight
+        self.pipeline = Pipeline(
+            [
+                ("transformer", MultiSkillTransformer()),
+                (
+                    "clf",
+                    SVC(
+                        kernel=config.train.kernel,
+                        C=1,
+                        class_weight=config.train.class_weight,
+                    ),
+                ),
+            ]
         )
 
         self.pipeline.fit(self.X_train, self.y_train)
@@ -139,10 +171,6 @@ class MultiSkillFlow(FlowSpec):
         """
         evaluate the SVM model.
         """
-        import pickle
-        import sys
-        from datetime import datetime
-
         from sklearn.metrics import classification_report
 
         y_pred = self.pipeline.predict(self.X_test)
@@ -185,7 +213,7 @@ class MultiSkillFlow(FlowSpec):
                 requirements=[f"scikit-learn={sklearn.__version__}"],
                 dst=local_repo,
                 task="text-classification",
-                data=self.clean_data,
+                data=self.X,
             )
             model_card = card.Card(
                 self.pipeline, metadata=card.metadata_from_config(Path(local_repo))

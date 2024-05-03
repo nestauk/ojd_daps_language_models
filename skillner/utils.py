@@ -403,26 +403,6 @@ def _process_data(
 
     return text, ent_list
 
-
-def _transform_data(entity_list: Union[List[str], str]) -> List[int]:
-    """Transform text data into a list of numerical features.
-
-    Args:
-        entity_list (Union[List[str], str]): Entity list.
-
-    Returns:
-        List[int]: List of numerical features.
-    """
-
-    entity_list = [entity_list] if isinstance(entity_list, str) else entity_list
-
-    entity_vec = []
-    for entity in entity_list:
-        entity_vec.append([len(entity), int(" and " in entity), int("," in entity)])
-
-    return entity_vec
-
-
 ### FUNCTIONS FOR TRAINING NER MODEL ###
 
 
