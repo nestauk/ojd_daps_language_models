@@ -26,7 +26,7 @@ class SkillNerFlow(FlowSpec):
     production = Parameter(
         "production", help="to run in production mode", default=False
     )
-    hf_push = Parameter("hf_push", help="push model to huggingface?", default=True)
+    hf_push = Parameter("hf_push", help="push model to huggingface?", default=False)
 
     @step
     def start(self):
@@ -34,6 +34,10 @@ class SkillNerFlow(FlowSpec):
         Starts the flow.
         """
         msg.info("Starting flow to train SkillNER model...")
+
+        self.all_labels = [
+            label for label in config.data.all_labels if label != "MULTISKILL"
+        ]
 
         self.next(self.load_data)
 
@@ -137,12 +141,9 @@ class SkillNerFlow(FlowSpec):
             y_true.append(true_tags)
             y_pred.append(pred_tags)
 
-        # let's get rid of the MULTISKILL label
-        all_labels = [
-            label for label in config.data.all_labels if label != "MULTISKILL"
-        ]
-
-        self.evaluation_results = evaluate_ner(y_true, y_pred, all_labels=all_labels)
+        self.evaluation_results = evaluate_ner(
+            y_true, y_pred, all_labels=self.all_labels
+        )
         # Let's print an overall metric
         msg.info(
             f"Overall F1 Score: {self.evaluation_results['results_summary']['All']['f1']}"
@@ -160,19 +161,54 @@ class SkillNerFlow(FlowSpec):
         if self.hf_push:
             import huggingface_hub
             from spacy_huggingface_hub import push
+            import srsly
 
             output_path = Path.cwd() / "output"
             if not output_path.exists():
                 output_path.mkdir()
 
             self.nlp.to_disk(Path.cwd() / config.hf.sn_model_name)
+
+            ###create metadata here
+            ents_per_type_dict = {}
+            for l in self.all_labels:
+                ents_per_type_dict[l] = self.evaluation_results["results_per_tag"][l][
+                    "ent_type"
+                ]
+
+            metadata = {
+                "lang": self.nlp.lang,
+                "name": f"{self.nlp.lang}_{config.hf.sn_model_name}",
+                "version": self.nlp.meta["version"],
+                "description": "A Named Entity Recognition (NER) model to extract SKILL, EXPERIENCE and BENEFIT from job adverts.",
+                "labels": {
+                    "ner": [l for l in config.data.all_labels if l != "MULTISKILL"]
+                },
+                "pipeline": self.nlp.meta["pipeline"],
+                "components": self.nlp.meta["components"],
+                "disabled": self.nlp.meta["disabled"],
+                "performance": {
+                    "ents_p": self.evaluation_results["results_summary"]["All"][
+                        "precision"
+                    ],
+                    "ents_r": self.evaluation_results["results_summary"]["All"][
+                        "recall"
+                    ],
+                    "ents_f": self.evaluation_results["results_summary"]["All"]["f1"],
+                    "ents_per_type": ents_per_type_dict,
+                },
+                "author": config.hf.namespace,
+            }
+
+            srsly.write_json(output_path / "metadata.json", metadata)
+
             os.system(
-                f"python -m spacy package {Path.cwd() / config.hf.sn_model_name} {Path.cwd() / 'output'} --name {config.hf.sn_model_name} --build wheel"
+                f"python -m spacy package {Path.cwd() / config.hf.sn_model_name} {Path.cwd() / 'output'} --name {config.hf.sn_model_name} --meta-path {output_path / 'metadata.json'} --build wheel"
             )
 
             # get filename of the wheel file
             model_path = (
-                f'output/en_{config.train.spacy_model}-{self.nlp.meta["version"]}/dist'
+                f'output/en_{config.hf.sn_model_name}-{self.nlp.meta["version"]}/dist'
             )
             wheel_file = list((Path.cwd() / model_path).glob("*.whl"))[0]
 
