@@ -12,45 +12,21 @@ import boto3
 from dotenv import load_dotenv
 from metaflow import FlowSpec, Parameter, step
 from wasabi import msg
-
-from typing import List
 from sklearn.base import BaseEstimator, TransformerMixin
 
 from utils import config
 
 load_dotenv()
 
-
-### Define Multiskill Transformer
 class MultiSkillTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
-        # No fitting necessary, just return self
         return self
 
     def transform(self, X):
-        """Apply the transform_skill function to each element in X.
-
-        Args:
-            X (iterable of str): The data to transform.
-
-        Returns:
-            List[List[int]]: Transformed data, where each item is the output of transform_skill.
-        """
         return [self.transform_skill(skill) for skill in X]
 
     @staticmethod
-    def transform_skill(skill: str) -> List[int]:
-        """Transform skill into a list of features. The features are:
-            - length of skill span;
-            - presence of " and " in skill span;
-            - presence of "," in skill span.
-
-        Args:
-            skill (str): skill span.
-
-        Returns:
-            List[int]: list of integers.
-        """
+    def transform_skill(skill: str):
         return [len(skill), int(" and " in skill), int("," in skill)]
 
 
@@ -201,10 +177,10 @@ class MultiSkillFlow(FlowSpec):
             import sklearn
             from skops import card, hub_utils
 
-            _, pkl_name = mkstemp(prefix="skops-", suffix=".pkl")
+            _, pkl_name = mkstemp(prefix=config.hf.ms_model_name, suffix=".pkl")
 
             with open(pkl_name, mode="bw") as f:
-                pickle.dump(self.pipeline, file=f)
+                pickle.dump(self.pipeline['clf'], file=f)
 
             local_repo = mkdtemp(prefix="skops-")
 
