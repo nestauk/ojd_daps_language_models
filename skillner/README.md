@@ -26,7 +26,7 @@ You will need access to Nesta's s3 bucket to train the model. If you would like 
 export HF_TOKEN="<your_token>" > .env
 ```
 
-Then, you can use the `--push-to-hub=True` flag.
+Then, you can use the `--hf_push=True` flag.
 
 ### 🤔📠 Using the model
 
@@ -70,7 +70,7 @@ You will need access to Nesta's s3 bucket to train the model. If you would like 
 export HF_TOKEN="<your_token>" > .env
 ```
 
-Then, you can use the `--push-to-hub=True` flag.
+Then, you can use the `--hf_push=True` flag.
 
 ### 🍄📠 Using the model
 
