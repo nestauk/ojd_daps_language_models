@@ -1,0 +1,6 @@
+python-dotenv
+wasabi
+scikit-learn
+toolz
+pandas
+skops
