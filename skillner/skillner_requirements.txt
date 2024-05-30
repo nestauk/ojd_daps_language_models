@@ -1,0 +1,5 @@
+nervaluate
+spacy
+wasabi
+spacy-huggingface-hub
+huggingface-hub
