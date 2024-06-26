@@ -24,7 +24,7 @@ from wasabi import msg
 ### DEFINE VARIABLES USED ACROSS THE FLOWS ###
 @dataclasses.dataclass
 class TrainConfig:
-    random_seed: int = 42
+    random_seed: int = 0
     test_size: float = 0.25
     kernel: str = "linear"
     class_weight: str = "balanced"
@@ -40,7 +40,7 @@ class TrainConfig:
 class DataConfig:
     bucket_name: str = "open-jobs-lake"
     data_path: Path = Path(
-        "escoe_extension/outputs/labelled_job_adverts/combined_labels_20220824.json"
+        "escoe_extension/outputs/labelled_job_adverts/combined_labels_20230808.json"
     )
     all_labels: List[str] = dataclasses.field(
         default_factory=lambda: ["SKILL", "MULTISKILL", "EXPERIENCE", "BENEFIT"]
@@ -402,6 +402,7 @@ def _process_data(
         text, ent_list = clean_entities_text(text, ent_list)
 
     return text, ent_list
+
 
 ### FUNCTIONS FOR TRAINING NER MODEL ###
 
