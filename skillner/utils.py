@@ -456,7 +456,7 @@ def evaluate_ner(
         dict: Evaluation results.
     """
     evaluator = Evaluator(y_true, y_pred, tags=all_labels, loader="list")
-    results_all, results_per_tag = evaluator.evaluate()
+    results_all, results_per_tag, _, _ = evaluator.evaluate()
 
     results_summary = {}
 

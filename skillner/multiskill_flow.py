@@ -1,6 +1,6 @@
 """
 Flow to train a classifier to predict if skill spans
-    are multiskills or not. 
+    are multiskills or not.
 
 python multiskill_flow.py --package-suffixes=.txt run
 """
@@ -17,6 +17,7 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from utils import config
 
 load_dotenv()
+
 
 class MultiSkillTransformer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
@@ -96,7 +97,7 @@ class MultiSkillFlow(FlowSpec):
         from sklearn.model_selection import train_test_split
         import random
 
-        random.seed(config.train.random_seed)
+        random.seed(42)
         random.shuffle(self.skills_list)
 
         # balance dataset
@@ -180,7 +181,7 @@ class MultiSkillFlow(FlowSpec):
             _, pkl_name = mkstemp(prefix=config.hf.ms_model_name, suffix=".pkl")
 
             with open(pkl_name, mode="bw") as f:
-                pickle.dump(self.pipeline['clf'], file=f)
+                pickle.dump(self.pipeline["clf"], file=f)
 
             local_repo = mkdtemp(prefix="skops-")
 
