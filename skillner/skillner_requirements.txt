@@ -1,5 +1,5 @@
-nervaluate
-spacy
+nervaluate==0.2.0
+spacy==3.7.4
 wasabi
 spacy-huggingface-hub
 huggingface-hub
